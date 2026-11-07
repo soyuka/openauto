@@ -34,6 +34,7 @@ const std::string Configuration::cVideoResolutionKey = "Video.Resolution";
 const std::string Configuration::cVideoScreenDPIKey = "Video.ScreenDPI";
 const std::string Configuration::cVideoMarginWidth = "Video.MarginWidth";
 const std::string Configuration::cVideoMarginHeight = "Video.MarginHeight";
+const std::string Configuration::cVideoDecoder = "Video.Decoder";
 
 
 const std::string Configuration::cAudioMusicAudioChannelEnabled = "Audio.MusicAudioChannelEnabled";
@@ -92,6 +93,7 @@ void Configuration::load()
         screenDPI_ = iniConfig.get<size_t>(cVideoScreenDPIKey, 140);
 
         videoMargins_ = QRect(0, 0, iniConfig.get<int32_t>(cVideoMarginWidth, 0), iniConfig.get<int32_t>(cVideoMarginHeight, 0));
+        videoDecoder_ = iniConfig.get<std::string>(cVideoDecoder, "");
 
         enableTouchscreen_ = iniConfig.get<bool>(cInputEnableTouchscreenKey, true);
         this->readButtonCodes(iniConfig);
@@ -128,6 +130,7 @@ void Configuration::reset()
     videoResolution_ = aasdk::proto::enums::VideoResolution::_480p;
     screenDPI_ = 140;
     videoMargins_ = QRect(0, 0, 0, 0);
+    videoDecoder_.clear();
     enableTouchscreen_ = true;
     buttonCodes_.clear();
     bluetoothAdapterType_ = BluetoothAdapterType::NONE;
@@ -148,6 +151,7 @@ void Configuration::save()
     iniConfig.put<size_t>(cVideoScreenDPIKey, screenDPI_);
     iniConfig.put<uint32_t>(cVideoMarginWidth, videoMargins_.width());
     iniConfig.put<uint32_t>(cVideoMarginHeight, videoMargins_.height());
+    iniConfig.put<std::string>(cVideoDecoder, videoDecoder_);
 
     iniConfig.put<bool>(cInputEnableTouchscreenKey, enableTouchscreen_);
     this->writeButtonCodes(iniConfig);
@@ -225,6 +229,16 @@ void Configuration::setVideoMargins(QRect value)
 QRect Configuration::getVideoMargins() const
 {
     return videoMargins_;
+}
+
+std::string Configuration::getVideoDecoder() const
+{
+    return videoDecoder_;
+}
+
+void Configuration::setVideoDecoder(const std::string& value)
+{
+    videoDecoder_ = value;
 }
 
 bool Configuration::getTouchscreenEnabled() const

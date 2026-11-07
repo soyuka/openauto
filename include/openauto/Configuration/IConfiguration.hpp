@@ -57,6 +57,8 @@ public:
     virtual void setScreenDPI(size_t value) = 0;
     virtual void setVideoMargins(QRect value) = 0;
     virtual QRect getVideoMargins() const = 0;
+    virtual std::string getVideoDecoder() const = 0;
+    virtual void setVideoDecoder(const std::string& value) = 0;
 
     virtual bool getTouchscreenEnabled() const = 0;
     virtual void setTouchscreenEnabled(bool value) = 0;

@@ -3,6 +3,7 @@ add_library(openauto SHARED
     Configuration/Configuration.cpp
     Configuration/RecentAddressesList.cpp
     Projection/DummyBluetoothDevice.cpp
+    Projection/GStreamerVideoOutput.cpp
     Projection/InputDevice.cpp
     Projection/LocalBluetoothDevice.cpp
     Projection/QtAudioInput.cpp
