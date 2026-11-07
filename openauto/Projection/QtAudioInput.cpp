@@ -16,7 +16,9 @@
 *  along with openauto. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <QApplication>
+#include <QCoreApplication>
+#include <QIODevice>
+#include <QMediaDevices>
 #include "openauto/Projection/QtAudioInput.hpp"
 #include "OpenautoLog.hpp"
 
@@ -32,12 +34,9 @@ QtAudioInput::QtAudioInput(uint32_t channelCount, uint32_t sampleSize, uint32_t 
 
     audioFormat_.setChannelCount(channelCount);
     audioFormat_.setSampleRate(sampleRate);
-    audioFormat_.setSampleSize(sampleSize);
-    audioFormat_.setCodec("audio/pcm");
-    audioFormat_.setByteOrder(QAudioFormat::LittleEndian);
-    audioFormat_.setSampleType(QAudioFormat::SignedInt);
+    audioFormat_.setSampleFormat(sampleSize == 32 ? QAudioFormat::Int32 : sampleSize == 8 ? QAudioFormat::UInt8 : QAudioFormat::Int16);
 
-    this->moveToThread(QApplication::instance()->thread());
+    this->moveToThread(QCoreApplication::instance()->thread());
     connect(this, &QtAudioInput::startRecording, this, &QtAudioInput::onStartRecording, Qt::QueuedConnection);
     connect(this, &QtAudioInput::stopRecording, this, &QtAudioInput::onStopRecording, Qt::QueuedConnection);
     QMetaObject::invokeMethod(this, "createAudioInput", Qt::BlockingQueuedConnection);
@@ -46,7 +45,7 @@ QtAudioInput::QtAudioInput(uint32_t channelCount, uint32_t sampleSize, uint32_t 
 void QtAudioInput::createAudioInput()
 {
     OPENAUTO_LOG(debug) << "[AudioInput] create.";
-    audioInput_ = (std::make_unique<QAudioInput>(QAudioDeviceInfo::defaultInputDevice(), audioFormat_));
+    audioInput_ = std::make_unique<QAudioSource>(QMediaDevices::defaultAudioInput(), audioFormat_);
 }
 
 bool QtAudioInput::open()
@@ -93,7 +92,7 @@ void QtAudioInput::stop()
 
 uint32_t QtAudioInput::getSampleSize() const
 {
-    return audioFormat_.sampleSize();
+    return audioFormat_.bytesPerSample() * 8;
 }
 
 uint32_t QtAudioInput::getChannelCount() const

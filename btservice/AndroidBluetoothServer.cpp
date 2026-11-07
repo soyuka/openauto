@@ -39,8 +39,9 @@ void AndroidBluetoothServer::onClientConnected()
 
 bool AndroidBluetoothServer::writeProtoMessage(uint16_t messageType, google::protobuf::Message& message)
 {
-    QByteArray byteArray(message.SerializeAsString().c_str(), message.ByteSize());
-    uint16_t messageLength = message.ByteSize();
+    const std::string serialized = message.SerializeAsString();
+    QByteArray byteArray(serialized.data(), static_cast<qsizetype>(serialized.size()));
+    uint16_t messageLength = static_cast<uint16_t>(serialized.size());
     byteArray.prepend(messageType & 0x000000ff);
     byteArray.prepend((messageType & 0x0000ff00) >> 8);
     byteArray.prepend(messageLength & 0x000000ff);

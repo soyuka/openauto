@@ -62,14 +62,7 @@ void btservice::connectToBluetooth(QBluetoothAddress addr, QBluetoothAddress con
     // bluetoothctl can then connect as normal.
     // Why don't we just use rfcomm (as we had previously on pis)? Because an rfcomm initiated connection doesn't connect HFP, which breaks the use of
     // pi mic/speakers for android auto phone calls. bluetoothctl will connect all profiles.
-    
-#ifdef RPI
-//    QString program = QString::fromStdString("sudo hcitool cc ")+addr.toString();
-//    btConnectProcess = new QProcess();
-//    OPENAUTO_LOG(info)<<"[btservice] Attempting to connect to last bluetooth device, "<<addr.toString().toStdString()<<" using hcitool/bluetoothctl hybrid";
-//    btConnectProcess->start(program, QProcess::Unbuffered | QProcess::ReadWrite);
-//    btConnectProcess->waitForFinished();
-#endif
+
     btConnectProcess = new QProcess();
     btConnectProcess->setProcessChannelMode(QProcess::SeparateChannels);
     OPENAUTO_LOG(info)<<"[btservice] Attempting to connect to last bluetooth device, "<<addr.toString().toStdString()<<" with bluetoothctl";

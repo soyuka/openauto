@@ -1,0 +1,16 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(Threads)
+find_dependency(Boost 1.71 CONFIG COMPONENTS system log)
+find_dependency(Protobuf)
+find_dependency(Qt6 6.4 COMPONENTS Core Gui Widgets Network Multimedia MultimediaWidgets Bluetooth)
+find_dependency(aasdk 3)
+find_dependency(PkgConfig)
+if(NOT TARGET PkgConfig::RTAUDIO)
+    pkg_check_modules(RTAUDIO REQUIRED IMPORTED_TARGET rtaudio)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/openautoTargets.cmake")
+
+check_required_components(openauto)

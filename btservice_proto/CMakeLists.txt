@@ -1,13 +1,26 @@
-include(FindProtobuf)
-find_package(Protobuf REQUIRED)
-include_directories(${PROTOBUF_INCLUDE_DIR})
+file(GLOB proto_files CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.proto)
 
-file(GLOB_RECURSE proto_files ${CMAKE_CURRENT_SOURCE_DIR}/*.proto)
-protobuf_generate_cpp(proto_sources proto_headers ${proto_files})
-add_library(btservice_proto SHARED ${proto_headers} ${proto_sources})
-target_link_libraries(btservice_proto ${PROTOBUF_LIBRARIES})
+add_library(btservice_proto SHARED ${proto_files})
+add_library(openauto::btservice_proto ALIAS btservice_proto)
 
-install(TARGETS btservice_proto DESTINATION lib)
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} DESTINATION include
-        FILES_MATCHING PATTERN *.h
-        PATTERN CMakeFiles EXCLUDE)
+protobuf_generate(TARGET btservice_proto LANGUAGE cpp
+    IMPORT_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
+    PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
+
+target_include_directories(btservice_proto PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(btservice_proto PUBLIC protobuf::libprotobuf)
+
+set_target_properties(btservice_proto PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR})
+
+install(TARGETS btservice_proto
+    EXPORT openautoTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT libraries)
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/btservice_proto
+    COMPONENT headers
+    FILES_MATCHING PATTERN "*.pb.h"
+    PATTERN CMakeFiles EXCLUDE)

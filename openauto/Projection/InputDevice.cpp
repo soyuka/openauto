@@ -200,8 +200,8 @@ bool InputDevice::handleTouchEvent(QEvent* event)
             type = aasdk::proto::enums::TouchAction::PRESS;
             break;
         case QEvent::TouchUpdate:
-            if(qtTouchEvent->touchPointStates().testFlag(Qt::TouchPointPressed)) type = aasdk::proto::enums::TouchAction::POINTER_DOWN;
-            else if(qtTouchEvent->touchPointStates().testFlag(Qt::TouchPointReleased)) type = aasdk::proto::enums::TouchAction::POINTER_UP;
+            if(qtTouchEvent->touchPointStates().testFlag(QEventPoint::Pressed)) type = aasdk::proto::enums::TouchAction::POINTER_DOWN;
+            else if(qtTouchEvent->touchPointStates().testFlag(QEventPoint::Released)) type = aasdk::proto::enums::TouchAction::POINTER_UP;
             else{
                 type = aasdk::proto::enums::TouchAction::DRAG;
                 touchEvent->set_action_index(0);
@@ -218,7 +218,7 @@ bool InputDevice::handleTouchEvent(QEvent* event)
 
     touchEvent->set_touch_action(type);
 
-    auto pointers = qtTouchEvent->touchPoints();
+    const auto& pointers = qtTouchEvent->points();
 
     // What's with this pointer map and pointer id queue?
     // Pointers get a unique id during their lifespan, and android auto gets pissy when you try and just use the unique id qt assigns
@@ -232,7 +232,7 @@ bool InputDevice::handleTouchEvent(QEvent* event)
 
     for(int i=0; i<pointers.count(); i++)
     {
-        if(pointers[i].state() == Qt::TouchPointPressed){
+        if(pointers[i].state() == QEventPoint::Pressed){
             touchEvent->set_action_index(i);
             if(pointer_id_queue.top() == INT_MAX){
                 pointer_id_queue.push(max_pointers++);
@@ -240,14 +240,14 @@ bool InputDevice::handleTouchEvent(QEvent* event)
             pointer_map.insert(pointers[i].id(), pointer_id_queue.top());
             pointer_id_queue.pop();
         }
-        else if(pointers[i].state() == Qt::TouchPointReleased){
+        else if(pointers[i].state() == QEventPoint::Released){
             touchEvent->set_action_index(i);
             pointer_id_queue.push(pointer_map.take(pointers[i].id()));
         }
         
         auto touchLocation = touchEvent->add_touch_location();
-        touchLocation->set_x((static_cast<float>(pointers[i].pos().x()) / touchscreenGeometry_.width()) * displayGeometry_.width());
-        touchLocation->set_y((static_cast<float>(pointers[i].pos().y()) / touchscreenGeometry_.height()) * displayGeometry_.height());
+        touchLocation->set_x((static_cast<float>(pointers[i].position().x()) / touchscreenGeometry_.width()) * displayGeometry_.width());
+        touchLocation->set_y((static_cast<float>(pointers[i].position().y()) / touchscreenGeometry_.height()) * displayGeometry_.height());
         touchLocation->set_pointer_id(pointer_map[pointers[i].id()]);
     }
 
