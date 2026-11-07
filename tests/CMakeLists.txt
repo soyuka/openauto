@@ -9,3 +9,11 @@ add_test(NAME openauto_video_test COMMAND openauto_video_test)
 set_tests_properties(openauto_video_test PROPERTIES
     ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     TIMEOUT 120)
+
+add_executable(openauto_service_factory_test ServiceFactoryTest.cpp)
+target_link_libraries(openauto_service_factory_test PRIVATE openauto::openauto Qt6::Test)
+
+add_test(NAME openauto_service_factory_test COMMAND openauto_service_factory_test)
+set_tests_properties(openauto_service_factory_test PROPERTIES
+    ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    TIMEOUT 60)
