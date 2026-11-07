@@ -10,30 +10,26 @@ OpenAuto is an AndroidAuto(tm) headunit emulator based on aasdk library and Qt l
 [See demo video](https://www.youtube.com/watch?v=k9tKRqIkQs8)
 
 ### Build Guide
-#### Local build instructions for Raspberry Pi
 
-Having <a href="https://github.com/openDsh/aasdk">aasdk</a> built and install first is a prequisite for this task. Please complete the necessary aasdk steps before proceeding here.
+Requires Qt 6.8, GStreamer 1.x, RtAudio 6 and an installed [aasdk](https://github.com/openDsh/aasdk) (its CMake package is found through `CMAKE_PREFIX_PATH`). On Debian 13 (trixie):
 
-```sudo apt-get update
-sudo apt-get -y install cmake build-essential git
-
-sudo apt-get install libboost-all-dev libusb-1.0.0-dev libssl-dev cmake libprotobuf-dev protobuf-c-compiler protobuf-compiler libqt5multimedia5 libqt5multimedia5-plugins libqt5multimediawidgets5 qtmultimedia5-dev libqt5bluetooth5 libqt5bluetooth5-bin qtconnectivity5-dev pulseaudio librtaudio-dev
-
-git clone https://github.com/OpenDsh/openauto
-
-mkdir openauto_build; cd openauto_build
-
-cmake -DCMAKE_BUILD_TYPE=Release -DRPI3_BUILD=TRUE -DAASDK_INCLUDE_DIRS="../aasdk/include" -DAASDK_LIBRARIES="../aasdk/lib/libaasdk.so" -DAASDK_PROTO_INCLUDE_DIRS="../aasdk" -DAASDK_PROTO_LIBRARIES="../aasdk/lib/libaasdk_proto.so" ../openauto
-
-make -j2
-sudo make install
+```
+sudo apt-get install build-essential cmake ninja-build pkgconf \
+    libboost-system-dev libboost-log-dev libprotobuf-dev protobuf-compiler \
+    qt6-base-dev qt6-multimedia-dev qt6-connectivity-dev librtaudio-dev \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH=/path/to/aasdk/prefix
+cmake --build build
+cmake --install build
 ```
 
-The executable binary can then be found at ~/openauto/bin/autoapp
+`-DOPENAUTO_TEST=ON` builds the tests (`ctest --test-dir build`). Downstream projects use `find_package(openauto 2)` and link `openauto::openauto`.
+
+At runtime the video path needs `gstreamer1.0-plugins-base`, `gstreamer1.0-plugins-good`, `gstreamer1.0-plugins-bad` (h264parse) and an H.264 decoder, `gstreamer1.0-libav` (avdec_h264) on the Raspberry Pi 5, which has no hardware H.264 decoder. `Video.Decoder` in `openauto.ini` overrides the decoder with a gst-launch fragment, e.g. `avdec_h264 thread-type=frame` for 1080p throughput at the cost of latency.
 
 ### Supported functionalities
  - 480p, 720p and 1080p with 30 or 60 FPS
- - RaspberryPI 3 hardware acceleration support to decode video stream (up to 1080p@60!)
+ - Video decoding through GStreamer (software or any available hardware H.264 decoder)
  - Audio playback from all audio channels (Media, System and Speech)
  - Audio input for voice commands
  - Touchscreen and buttons input
@@ -45,9 +41,7 @@ The executable binary can then be found at ~/openauto/bin/autoapp
 
 ### Supported platforms
 
- - Linux
- - RaspberryPI 3
- - Windows
+ - Linux (X11 or Wayland), including the Raspberry Pi 5
 
 ### License
 GNU GPLv3
@@ -62,8 +56,7 @@ Copyrights (c) 2018 f1x.studio (Michal Szwaj)
  - [Qt libraries](https://www.qt.io/)
  - [CMake](https://cmake.org/)
  - [RtAudio](https://www.music.mcgill.ca/~gary/rtaudio/playback.html)
- - Broadcom ilclient from RaspberryPI 3 firmware
- - OpenMAX IL API
+ - [GStreamer](https://gstreamer.freedesktop.org/)
 
 ### Remarks
 **This software is not certified by Google Inc. It is created for R&D purposes and may not work as expected by the original authors. Do not use while driving. You use this software at your own risk.**
