@@ -260,7 +260,7 @@ color: rgb(238, 238, 236);</string>
       </property>
      </widget>
     </widget>
-    <widget class="QGroupBox" name="groupBoxOmxLayerIndex">
+    <widget class="QGroupBox" name="groupBoxDisplay">
      <property name="geometry">
       <rect>
        <x>0</x>
@@ -272,55 +272,6 @@ color: rgb(238, 238, 236);</string>
      <property name="title">
       <string>Display</string>
      </property>
-     <widget class="QLabel" name="labelOmxLayerIndex">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>40</y>
-        <width>91</width>
-        <height>21</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Layer index:</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="labelBluetoothAddressFormatInfo_2">
-      <property name="geometry">
-       <rect>
-        <x>60</x>
-        <y>80</y>
-        <width>311</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-style:italic;&quot;&gt;OMX Layer is used only in case of OMX video output.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="labelBluetoothAddressFormatInfoIcon_2">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>80</y>
-        <width>21</width>
-        <height>31</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;img src=&quot;:/ico_info.png&quot;/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="spinBoxOmxLayerIndex">
-      <property name="geometry">
-       <rect>
-        <x>100</x>
-        <y>30</y>
-        <width>71</width>
-        <height>41</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QLabel" name="labelVideoMarginWidth">
       <property name="geometry">
        <rect>
@@ -1002,7 +953,6 @@ color: rgb(238, 238, 236);</string>
   <tabstop>radioButton480p</tabstop>
   <tabstop>radioButton720p</tabstop>
   <tabstop>radioButton1080p</tabstop>
-  <tabstop>spinBoxOmxLayerIndex</tabstop>
   <tabstop>spinBoxVideoMarginWidth</tabstop>
   <tabstop>spinBoxVideoMarginHeight</tabstop>
   <tabstop>horizontalSliderScreenDPI</tabstop>

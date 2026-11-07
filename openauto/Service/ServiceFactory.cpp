@@ -17,6 +17,7 @@
 */
 
 #include <QApplication>
+#include <QWidget>
 #include <QScreen>
 #include "aasdk/Channel/AV/MediaAudioServiceChannel.hpp"
 #include "aasdk/Channel/AV/SystemAudioServiceChannel.hpp"
@@ -31,9 +32,6 @@
 #include "openauto/Service/BluetoothService.hpp"
 #include "openauto/Service/InputService.hpp"
 #include "openauto/Service/NavigationStatusService.hpp"
-#include "openauto/Projection/QtVideoOutput.hpp"
-#include "openauto/Projection/GSTVideoOutput.hpp"
-#include "openauto/Projection/OMXVideoOutput.hpp"
 #include "openauto/Projection/RtAudioOutput.hpp"
 #include "openauto/Projection/QtAudioOutput.hpp"
 #include "openauto/Projection/QtAudioInput.hpp"
@@ -54,13 +52,6 @@ ServiceFactory::ServiceFactory(boost::asio::io_service& ioService, configuration
     , activeArea_(activeArea)
     , screenGeometry_(this->mapActiveAreaToGlobal(activeArea_))
     , activeCallback_(activeCallback)
-#if defined USE_OMX
-    , omxVideoOutput_(std::make_shared<projection::OMXVideoOutput>(configuration_, this->QRectToDestRect(screenGeometry_), activeCallback_))
-#elif defined USE_GST
-    , gstVideoOutput_((QGst::init(nullptr, nullptr), std::make_shared<projection::GSTVideoOutput>(configuration_, activeArea_, activeCallback_)))
-#else
-    , qtVideoOutput_(nullptr)
-#endif
     , btservice_(configuration_)
     , nightMode_(nightMode)
 {
@@ -80,7 +71,6 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     sensorService_ = sensorService;
     serviceList.emplace_back(sensorService);
 
-    serviceList.emplace_back(this->createVideoService(messenger));
     serviceList.emplace_back(this->createBluetoothService(messenger));
     std::shared_ptr<NavigationStatusService> navStatusService = this->createNavigationStatusService(messenger);
     navStatusService_ = navStatusService;
@@ -93,28 +83,6 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     inputService_ = inputService;
     serviceList.emplace_back(inputService);
     return serviceList;
-}
-
-IService::Pointer ServiceFactory::createVideoService(aasdk::messenger::IMessenger::Pointer messenger)
-{
-#if defined USE_OMX
-    auto videoOutput(omxVideoOutput_);
-#elif defined USE_GST
-    auto videoOutput(gstVideoOutput_);
-#else
-    qtVideoOutput_ = new projection::QtVideoOutput(configuration_, activeArea_);
-    if(activeCallback_ != nullptr)
-    {
-        QObject::connect(qtVideoOutput_, &projection::QtVideoOutput::startPlayback, [callback = activeCallback_]() { callback(true); });
-        QObject::connect(qtVideoOutput_, &projection::QtVideoOutput::stopPlayback, [this]() {
-            activeCallback_(false);
-            qtVideoOutput_->disconnect();
-            qtVideoOutput_ = nullptr;
-        });
-    }
-    projection::IVideoOutput::Pointer videoOutput(qtVideoOutput_, std::bind(&QObject::deleteLater, std::placeholders::_1));
-#endif
-    return std::make_shared<VideoService>(ioService_, messenger, std::move(videoOutput));
 }
 
 IService::Pointer ServiceFactory::createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger)
@@ -204,14 +172,8 @@ void ServiceFactory::createAudioServices(ServiceList& serviceList, aasdk::messen
     serviceList.emplace_back(std::make_shared<SystemAudioService>(ioService_, messenger, std::move(systemAudioOutput)));
 }
 
-void ServiceFactory::setOpacity(unsigned int alpha)
+void ServiceFactory::setOpacity(unsigned int)
 {
-#ifdef USE_OMX
-    if(omxVideoOutput_ != nullptr)
-    {
-        omxVideoOutput_->setOpacity(alpha);
-    }
-#endif
 }
 
 void ServiceFactory::resize()
@@ -221,22 +183,6 @@ void ServiceFactory::resize()
     {
         inputDevice_->setTouchscreenGeometry(screenGeometry_);
     }
-#if defined USE_OMX
-    if(omxVideoOutput_ != nullptr)
-    {
-        omxVideoOutput_->setDestRect(this->QRectToDestRect(screenGeometry_));
-    }
-#elif defined USE_GST
-    if(gstVideoOutput_ != nullptr)
-    {
-        gstVideoOutput_->resize();
-    }
-#else
-    if(qtVideoOutput_ != nullptr)
-    {
-        qtVideoOutput_->resize();
-    }
-#endif
 }
 void ServiceFactory::setAndroidAutoInterface(IAndroidAutoInterface* aa_interface){
     if(aa_interface==NULL) return;
@@ -293,12 +239,6 @@ QRect ServiceFactory::mapActiveAreaToGlobal(QWidget* activeArea)
     return QRect(p.x(), p.y(), g.width(), g.height());
 }
 
-#ifdef USE_OMX
-projection::DestRect ServiceFactory::QRectToDestRect(QRect rect)
-{
-    return projection::DestRect(rect.x(), rect.y(), rect.width(), rect.height());
-}
-#endif
 
 }
 }

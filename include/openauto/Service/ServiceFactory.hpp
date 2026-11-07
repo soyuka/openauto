@@ -21,9 +21,6 @@
 #include "openauto/Service/IServiceFactory.hpp"
 #include "openauto/Configuration/IConfiguration.hpp"
 #include "openauto/Projection/InputDevice.hpp"
-#include "openauto/Projection/OMXVideoOutput.hpp"
-#include "openauto/Projection/GSTVideoOutput.hpp"
-#include "openauto/Projection/QtVideoOutput.hpp"
 #include "openauto/Service/MediaStatusService.hpp"
 #include "openauto/Service/NavigationStatusService.hpp"
 #include "openauto/Service/SensorService.hpp"
@@ -47,12 +44,8 @@ public:
     void sendKeyEvent(QKeyEvent* event);
     void setAndroidAutoInterface(IAndroidAutoInterface* aa_interface);
     static QRect mapActiveAreaToGlobal(QWidget* activeArea);
-#ifdef USE_OMX
-    static projection::DestRect QRectToDestRect(QRect rect);
-#endif
 
 private:
-    IService::Pointer createVideoService(aasdk::messenger::IMessenger::Pointer messenger);
     IService::Pointer createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger);
     std::shared_ptr<NavigationStatusService> createNavigationStatusService(aasdk::messenger::IMessenger::Pointer messenger);
     std::shared_ptr<MediaStatusService> createMediaStatusService(aasdk::messenger::IMessenger::Pointer messenger);
@@ -65,13 +58,6 @@ private:
     QRect screenGeometry_;
     std::function<void(bool)> activeCallback_;
     std::shared_ptr<projection::InputDevice> inputDevice_;
-#if defined USE_OMX
-    std::shared_ptr<projection::OMXVideoOutput> omxVideoOutput_;
-#elif defined USE_GST
-    std::shared_ptr<projection::GSTVideoOutput> gstVideoOutput_;
-#else
-    projection::QtVideoOutput *qtVideoOutput_;
-#endif
     btservice::btservice btservice_;
     bool nightMode_;
     std::weak_ptr<SensorService> sensorService_;
