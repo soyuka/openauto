@@ -17,6 +17,7 @@
 */
 
 #include <QApplication>
+#include <QVideoWidget>
 #include <QWidget>
 #include <QScreen>
 #include "aasdk/Channel/AV/MediaAudioServiceChannel.hpp"
@@ -52,11 +53,39 @@ ServiceFactory::ServiceFactory(boost::asio::io_service& ioService, configuration
     , activeArea_(activeArea)
     , screenGeometry_(this->mapActiveAreaToGlobal(activeArea_))
     , activeCallback_(activeCallback)
+    , videoOutput_(std::make_shared<projection::GStreamerVideoOutput>(configuration_))
+    , videoWidget_(new QVideoWidget(activeArea_))
     , btservice_(configuration_)
     , nightMode_(nightMode)
 {
-    OPENAUTO_LOG(info) << "SERVICE FACTORY INITED";
+    // Clicks and touches must reach activeArea, where InputDevice filters them.
+    videoWidget_->setAttribute(Qt::WA_TransparentForMouseEvents);
+    videoWidget_->setAspectRatioMode(Qt::IgnoreAspectRatio);
+    videoWidget_->hide();
+    videoOutput_->setVideoSink(videoWidget_->videoSink());
+    // An unlaid-out widget reports a placeholder size; the host's resize() supplies the real one.
+    if(activeArea_ == nullptr || activeArea_->testAttribute(Qt::WA_Resized))
+    {
+        videoOutput_->setContainerSize(screenGeometry_.size());
+    }
 
+    QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::startPlayback, videoWidget_, [this]() { this->onVideoStart(); });
+    QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::stopPlayback, videoWidget_, [this]() { this->onVideoStop(); });
+
+    OPENAUTO_LOG(info) << "SERVICE FACTORY INITED";
+}
+
+ServiceFactory::~ServiceFactory()
+{
+    videoOutput_->setVideoSink(nullptr);
+    if(videoWidget_ != nullptr)
+    {
+        QObject::disconnect(videoOutput_.get(), nullptr, videoWidget_, nullptr);
+        if(activeArea_ == nullptr)
+        {
+            delete videoWidget_;
+        }
+    }
 }
 
 ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messenger)
@@ -71,6 +100,8 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     sensorService_ = sensorService;
     serviceList.emplace_back(sensorService);
 
+    serviceList.emplace_back(this->createVideoService(messenger));
+
     serviceList.emplace_back(this->createBluetoothService(messenger));
     std::shared_ptr<NavigationStatusService> navStatusService = this->createNavigationStatusService(messenger);
     navStatusService_ = navStatusService;
@@ -83,6 +114,52 @@ ServiceList ServiceFactory::create(aasdk::messenger::IMessenger::Pointer messeng
     inputService_ = inputService;
     serviceList.emplace_back(inputService);
     return serviceList;
+}
+
+IService::Pointer ServiceFactory::createVideoService(aasdk::messenger::IMessenger::Pointer messenger)
+{
+    return std::make_shared<VideoService>(ioService_, messenger, videoOutput_);
+}
+
+std::shared_ptr<projection::GStreamerVideoOutput> ServiceFactory::videoOutput() const
+{
+    return videoOutput_;
+}
+
+void ServiceFactory::onVideoStart()
+{
+    if(activeCallback_ != nullptr)
+    {
+        activeCallback_(true);
+    }
+    if(videoWidget_ == nullptr)
+    {
+        return;
+    }
+
+    if(activeArea_ == nullptr)
+    {
+        videoWidget_->setWindowFlags(Qt::WindowStaysOnTopHint | Qt::FramelessWindowHint);
+        videoWidget_->showFullScreen();
+    }
+    else
+    {
+        videoWidget_->setGeometry(activeArea_->rect());
+        videoWidget_->show();
+        videoWidget_->raise();
+    }
+}
+
+void ServiceFactory::onVideoStop()
+{
+    if(activeCallback_ != nullptr)
+    {
+        activeCallback_(false);
+    }
+    if(videoWidget_ != nullptr)
+    {
+        videoWidget_->hide();
+    }
 }
 
 IService::Pointer ServiceFactory::createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger)
@@ -172,16 +249,17 @@ void ServiceFactory::createAudioServices(ServiceList& serviceList, aasdk::messen
     serviceList.emplace_back(std::make_shared<SystemAudioService>(ioService_, messenger, std::move(systemAudioOutput)));
 }
 
-void ServiceFactory::setOpacity(unsigned int)
-{
-}
-
 void ServiceFactory::resize()
 {
     screenGeometry_ = this->mapActiveAreaToGlobal(activeArea_);
     if(inputDevice_ != nullptr)
     {
         inputDevice_->setTouchscreenGeometry(screenGeometry_);
+    }
+    videoOutput_->setContainerSize(screenGeometry_.size());
+    if(activeArea_ != nullptr && videoWidget_ != nullptr)
+    {
+        videoWidget_->setGeometry(activeArea_->rect());
     }
 }
 void ServiceFactory::setAndroidAutoInterface(IAndroidAutoInterface* aa_interface){

@@ -20,12 +20,15 @@
 
 #include "openauto/Service/IServiceFactory.hpp"
 #include "openauto/Configuration/IConfiguration.hpp"
+#include "openauto/Projection/GStreamerVideoOutput.hpp"
 #include "openauto/Projection/InputDevice.hpp"
 #include "openauto/Service/MediaStatusService.hpp"
 #include "openauto/Service/NavigationStatusService.hpp"
 #include "openauto/Service/SensorService.hpp"
 #include "openauto/Service/InputService.hpp"
 #include "btservice/btservice.hpp"
+#include <QPointer>
+#include <QVideoWidget>
 
 namespace openauto
 {
@@ -36,8 +39,9 @@ class ServiceFactory : public IServiceFactory
 {
 public:
     ServiceFactory(boost::asio::io_service& ioService, configuration::IConfiguration::Pointer configuration, QWidget* activeArea=nullptr, std::function<void(bool)> activeCallback=nullptr, bool nightMode=false);
+    ~ServiceFactory();
     ServiceList create(aasdk::messenger::IMessenger::Pointer messenger) override;
-    void setOpacity(unsigned int alpha);
+    std::shared_ptr<projection::GStreamerVideoOutput> videoOutput() const;
     void resize();
     void setNightMode(bool nightMode);
     void sendButtonPress(aasdk::proto::enums::ButtonCode::Enum buttonCode, projection::WheelDirection wheelDirection = projection::WheelDirection::NONE, projection::ButtonEventType buttonEventType = projection::ButtonEventType::NONE);
@@ -46,6 +50,9 @@ public:
     static QRect mapActiveAreaToGlobal(QWidget* activeArea);
 
 private:
+    IService::Pointer createVideoService(aasdk::messenger::IMessenger::Pointer messenger);
+    void onVideoStart();
+    void onVideoStop();
     IService::Pointer createBluetoothService(aasdk::messenger::IMessenger::Pointer messenger);
     std::shared_ptr<NavigationStatusService> createNavigationStatusService(aasdk::messenger::IMessenger::Pointer messenger);
     std::shared_ptr<MediaStatusService> createMediaStatusService(aasdk::messenger::IMessenger::Pointer messenger);
@@ -58,6 +65,8 @@ private:
     QRect screenGeometry_;
     std::function<void(bool)> activeCallback_;
     std::shared_ptr<projection::InputDevice> inputDevice_;
+    std::shared_ptr<projection::GStreamerVideoOutput> videoOutput_;
+    QPointer<QVideoWidget> videoWidget_;
     btservice::btservice btservice_;
     bool nightMode_;
     std::weak_ptr<SensorService> sensorService_;
