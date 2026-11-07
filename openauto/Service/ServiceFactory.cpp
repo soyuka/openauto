@@ -69,22 +69,22 @@ ServiceFactory::ServiceFactory(boost::asio::io_service& ioService, configuration
         videoOutput_->setContainerSize(screenGeometry_.size());
     }
 
-    QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::startPlayback, videoWidget_, [this]() { this->onVideoStart(); });
-    QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::stopPlayback, videoWidget_, [this]() { this->onVideoStop(); });
+    // Context is the output itself (GUI thread), so the slots survive setVideoSink() dropping the widget.
+    videoStartConnection_ = QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::startPlayback, videoOutput_.get(), [this]() { this->onVideoStart(); });
+    videoStopConnection_ = QObject::connect(videoOutput_.get(), &projection::GStreamerVideoOutput::stopPlayback, videoOutput_.get(), [this]() { this->onVideoStop(); });
 
     OPENAUTO_LOG(info) << "SERVICE FACTORY INITED";
 }
 
 ServiceFactory::~ServiceFactory()
 {
+    // VideoService may keep the output alive past this factory
+    QObject::disconnect(videoStartConnection_);
+    QObject::disconnect(videoStopConnection_);
     videoOutput_->setVideoSink(nullptr);
-    if(videoWidget_ != nullptr)
+    if(videoWidget_ != nullptr && activeArea_ == nullptr)
     {
-        QObject::disconnect(videoOutput_.get(), nullptr, videoWidget_, nullptr);
-        if(activeArea_ == nullptr)
-        {
-            delete videoWidget_;
-        }
+        delete videoWidget_;
     }
 }
 
@@ -124,6 +124,12 @@ IService::Pointer ServiceFactory::createVideoService(aasdk::messenger::IMessenge
 std::shared_ptr<projection::GStreamerVideoOutput> ServiceFactory::videoOutput() const
 {
     return videoOutput_;
+}
+
+void ServiceFactory::setVideoSink(QVideoSink* sink)
+{
+    videoOutput_->setVideoSink(sink);
+    delete videoWidget_;
 }
 
 void ServiceFactory::onVideoStart()

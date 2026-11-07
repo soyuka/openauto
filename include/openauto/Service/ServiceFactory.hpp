@@ -42,6 +42,9 @@ public:
     ~ServiceFactory();
     ServiceList create(aasdk::messenger::IMessenger::Pointer messenger) override;
     std::shared_ptr<projection::GStreamerVideoOutput> videoOutput() const;
+    // Renders into the host's sink instead of the internal QVideoWidget, e.g. to
+    // draw projection inside a scene that other widgets can overlay.
+    void setVideoSink(QVideoSink* sink);
     void resize();
     void setNightMode(bool nightMode);
     void sendButtonPress(aasdk::proto::enums::ButtonCode::Enum buttonCode, projection::WheelDirection wheelDirection = projection::WheelDirection::NONE, projection::ButtonEventType buttonEventType = projection::ButtonEventType::NONE);
@@ -67,6 +70,8 @@ private:
     std::shared_ptr<projection::InputDevice> inputDevice_;
     std::shared_ptr<projection::GStreamerVideoOutput> videoOutput_;
     QPointer<QVideoWidget> videoWidget_;
+    QMetaObject::Connection videoStartConnection_;
+    QMetaObject::Connection videoStopConnection_;
     btservice::btservice btservice_;
     bool nightMode_;
     std::weak_ptr<SensorService> sensorService_;
